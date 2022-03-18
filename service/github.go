@@ -108,7 +108,6 @@ func (g *Github) GetUser(username string) (*PublicUser, error) {
 
 	expire := time.Now().Add(time.Duration(g.conf.UserLifetime) * time.Second)
 	g.cache.Set(username, &cache.Item{contents, &expire})
-	// think about using ETags for stale users in the cache
 
 	return user, nil
 }

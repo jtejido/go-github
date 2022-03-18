@@ -40,7 +40,7 @@ $ curl "http://localhost:8080/user?name=jtejido&name=abc"
 **Result:**
 
 ```
-[{"id":3063240,"login":"abc","avatar_url":"https://avatars.githubusercontent.com/u/3063240?v=4","url":"https://api.github.com/users/abc","name":"Alastair Blake Campbell","company":"Bibliographic Data Services, Ltd","blog":"","location":"Scotland, UK","email":"","bio":"I'm a Systems Analyst/Programmer. I like C#, Java and C++ primarily. I'm also into Rust! ","public_repos":21,"followers":14,"following":3,"created_at":"2012-12-17T13:22:55Z","type":"User"},{"id":13869015,"login":"jtejido","avatar_url":"https://avatars.githubusercontent.com/u/13869015?v=4","url":"https://api.github.com/users/jtejido","name":"","company":"","blog":"","location":"","email":"","bio":"https://github.com/lucky-se7en","public_repos":60,"followers":5,"following":0,"created_at":"2015-08-19T12:01:20Z","type":"User"}]
+[{"id":13869015,"login":"jtejido","name":"","company":"","blog":"","location":"","email":"","bio":"https://github.com/lucky-se7en","public_repos":60,"followers":5,"following":0},{"id":3063240,"login":"abc","name":"Alastair Blake Campbell","company":"Bibliographic Data Services, Ltd","blog":"","location":"Scotland, UK","email":"","bio":"I'm a Systems Analyst/Programmer. I like C#, Java and C++ primarily. I'm also into Rust! ","public_repos":21,"followers":14,"following":3}]
 ```
 
 Open a browser or send a CURL request to the following url:
