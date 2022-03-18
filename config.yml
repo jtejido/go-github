@@ -1,0 +1,5 @@
+max_limit: 10 # maximum number of usernames allowed
+user_lifetime: 120 # in seconds, the user's lifetime in cache
+listen: 0.0.0.0:8080  # domain it listens to
+debug: false
+token: F41EF9AE1428F3A8
