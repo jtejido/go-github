@@ -29,10 +29,8 @@ type RateLimit struct {
 }
 
 type SimpleUser struct {
-	Id        int    `json:"id"`
-	Login     string `json:"login"`
-	AvatarURL string `json:"avatar_url"`
-	Url       string `json:"url"`
+	Id    int    `json:"id"`
+	Login string `json:"login"`
 }
 
 type PublicUser struct {
@@ -46,8 +44,6 @@ type PublicUser struct {
 	PublicRepos int    `json:"public_repos"`
 	Followers   int    `json:"followers"`
 	Following   int    `json:"following"`
-	CreatedAt   string `json:"created_at"`
-	Type        string `json:"type"`
 }
 
 func New() *Github {
