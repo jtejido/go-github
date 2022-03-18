@@ -50,4 +50,4 @@ Open a browser or send a CURL request to the following url:
 The list of names and its result will be sorted alphabetically.
 
 ### Caching
-Each usernames will be cached within the given item_lifetime defined in the config file (default is 120 seconds).
+Each usernames will be cached within the given *item_lifetime* defined in the **config file** (default is 120 seconds).
