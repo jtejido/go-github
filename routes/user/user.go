@@ -1,22 +1,21 @@
 package user
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jtejido/go-github/cache"
 	"github.com/jtejido/go-github/config"
 	"github.com/jtejido/go-github/core"
 	"github.com/jtejido/go-github/service"
 	"net/http"
 	"sort"
-	"time"
 )
 
-func userHandler(svc *service.Github, conf *config.Config, store *cache.Cache) func(c *gin.Context) {
+func userHandler(conf *config.Config, svc *service.Github) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ch := make(chan *service.PublicUser)
+		errChan := make(chan error)
+
 		req := c.Request
 		req.ParseForm()
 		r := req.Form
@@ -30,37 +29,38 @@ func userHandler(svc *service.Github, conf *config.Config, store *cache.Cache) f
 				return
 			}
 			sort.Strings(val)
-
 		}
 
-		resp := make([]*service.PublicUser, len(val))
-		for k, v := range val {
-			if item, err := store.Get(v); err == nil {
-				user := new(service.PublicUser)
-				if err := json.Unmarshal(item.Value, &user); err != nil {
-					c.JSON(http.StatusInternalServerError, core.NewErrorResponseWithCode(err.Error(), 500))
-					return
-				}
-				resp[k] = user
-			} else {
+		resp := make([]*service.PublicUser, 0)
+		for _, v := range val {
+			go func(v string) {
 				user, err := svc.GetUser(v)
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, core.NewErrorResponseWithCode(err.Error(), 500))
-					return
+					errChan <- err
 				}
-				resp[k] = user
-				expire := time.Now().Add(time.Duration(conf.UserLifetime) * time.Second)
-				reqBodyBytes := new(bytes.Buffer)
-				json.NewEncoder(reqBodyBytes).Encode(user)
-				store.Set(v, &cache.Item{reqBodyBytes.Bytes(), &expire})
-			}
-
+				ch <- user
+			}(v)
 		}
+
+		for i := 0; i < len(val); i++ {
+			select {
+			case err := <-errChan:
+				c.JSON(http.StatusInternalServerError, core.NewErrorResponseWithCode(err.Error(), 500))
+				return
+			case item := <-ch:
+				if item != nil {
+					resp = append(resp, item)
+				}
+			}
+		}
+
+		close(ch)
+		close(errChan)
 
 		c.JSON(http.StatusOK, resp)
 	}
 }
 
-func Setup(ctx context.Context, conf *config.Config, svc *service.Github, c *cache.Cache, g *gin.RouterGroup) {
-	g.GET("", userHandler(svc, conf, c))
+func Setup(ctx context.Context, conf *config.Config, svc *service.Github, g *gin.RouterGroup) {
+	g.GET("", userHandler(conf, svc))
 }

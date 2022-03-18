@@ -45,7 +45,7 @@ func routes(conf *config.Config, svc *service.Github, storage *cache.Cache, rout
 
 	ctx, cancel := context.WithCancel(context.WithValue(context.TODO(), "wg", wg))
 
-	user.Setup(ctx, conf, svc, storage, router.Group("/user", core.CORS))
+	user.Setup(ctx, conf, svc, router.Group("/user", core.CORS))
 
 	<-signals
 
@@ -59,7 +59,6 @@ func routes(conf *config.Config, svc *service.Github, storage *cache.Cache, rout
 // client main
 func main() {
 	flag.Parse()
-
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	gin.SetMode(gin.ReleaseMode)
@@ -68,8 +67,8 @@ func main() {
 		panic(err)
 	}
 	router := gin.New()
-	svc := service.New()
 	store := cache.New()
+	svc := service.New(store, conf)
 	listen := conf.Listen
 
 	if conf.Debug {

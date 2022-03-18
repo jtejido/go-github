@@ -2,11 +2,13 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/jtejido/go-github/cache"
+	"github.com/jtejido/go-github/config"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -20,6 +22,8 @@ type Github struct {
 	apiUrl    string
 	client    *http.Client
 	RateLimit *RateLimit
+	cache     *cache.Cache
+	conf      *config.Config
 }
 
 type RateLimit struct {
@@ -46,15 +50,26 @@ type PublicUser struct {
 	Following   int    `json:"following"`
 }
 
-func New() *Github {
+func New(cache *cache.Cache, conf *config.Config) *Github {
 	return &Github{
 		apiUrl:    apiUrl,
 		client:    &http.Client{},
 		RateLimit: new(RateLimit),
+		cache:     cache,
+		conf:      conf,
 	}
 }
 
 func (g *Github) GetUser(username string) (*PublicUser, error) {
+	if item, err := g.cache.Get(username); err == nil {
+		user := new(PublicUser)
+		if err := json.Unmarshal(item.Value, &user); err != nil {
+			return nil, err
+		}
+
+		return user, nil
+	}
+
 	url := g.apiUrl + strings.Replace(user_url, ":user", username, -1)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -62,6 +77,10 @@ func (g *Github) GetUser(username string) (*PublicUser, error) {
 	}
 	resp, err := g.client.Do(req)
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
 
 	limit, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Limit"), 10, 64)
 	if err == nil {
@@ -87,40 +106,9 @@ func (g *Github) GetUser(username string) (*PublicUser, error) {
 		return nil, err
 	}
 
+	expire := time.Now().Add(time.Duration(g.conf.UserLifetime) * time.Second)
+	g.cache.Set(username, &cache.Item{contents, &expire})
+	// think about using ETags for stale users in the cache
+
 	return user, nil
-}
-
-func (g *Github) ListUsers(results int) []*PublicUser {
-	url := g.apiUrl + users_url + "?per_page=" + fmt.Sprintf("%d", results)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
-	resp, err := g.client.Do(req)
-	defer resp.Body.Close()
-
-	limit, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Limit"), 10, 64)
-	if err == nil {
-		g.RateLimit.Limit = limit
-	}
-	remaining, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Remaining"), 10, 64)
-	if err == nil {
-		g.RateLimit.Remaining = remaining
-	}
-	reset, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64)
-	if err == nil {
-		g.RateLimit.Reset = reset
-	}
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	users := make([]*PublicUser, results)
-	err = json.Unmarshal(contents, &users)
-	if err != nil {
-		panic(err)
-	}
-
-	return users
 }

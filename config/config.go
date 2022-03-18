@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// Our choice of persistent GraphDB is Neo4j, you can create your own config loader for other preferences.
 type Config struct {
 	*viper.Viper
 	MaxLimit     int    `mapstructure:"max_limit"`
